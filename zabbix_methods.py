@@ -51,20 +51,26 @@ class ZabbixConnection(object):
         results = self.session.do_request(
             "hostgroup.massadd", {"groups": groups, "hosts": hosts})
 
-    def get_all_hosts(self, groupids=None):
+    def get_hosts(self, groupids=None):
         """
         Find all hosts.
 
         groupdis: Return only hosts that belong to the given groups. This means
         host belonging to either of the group ids in the list (a union).
+
+        :param monitored: set it to 0 to only get enabled hosts, set it to 1 to
+        get all hosts including deleted hosts
+
+        pass `"monitored_hosts": 0` to parameters to only get enabled hosts.
         """
         if groupids is None:
             parameters = {"output": ["name"]}
         else:
-            parameters = {"groupids": groupids, "output": ["name"]}
+            parameters = {"groupids": groupids,
+                          "output": ["name"], "monitored_hosts": monitored}
         results = self.session.do_request(
             "host.get", parameters)["result"]
-        return [result["name"] for result in results]
+        return [(result["name"], result["hostid"]) for result in results]
 
     def get_group_id(self, group_name):
         """Find the group id of a group"""
@@ -129,8 +135,8 @@ class ZabbixConnection(object):
         :param item_key: the item to look for
         :param item_type: The zabbix data type of item
         :param limit: max number of values to return
-        :param time_from: Return only values that have been received after or at the given time. 
-        :param time_till: Return only values that have been received before or at the given time. 
+        :param time_from: Return only values that have been received after or at the given time.
+        :param time_till: Return only values that have been received before or at the given time.
         """
 
         itemids = self.get_item(host_id, item_key, item_attribute="itemid")
